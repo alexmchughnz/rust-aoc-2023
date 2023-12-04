@@ -34,12 +34,7 @@ impl Game {
     }
 }
 
-fn part_one(input: &str) -> Option<u32> {
-    let test_game = Game {
-        most_cubes: HashMap::from([(Color::Red, 12), (Color::Green, 13), (Color::Blue, 14)]),
-        ..Game::default()
-    };
-
+fn parse_games(input: &str) -> Vec<Game> {
     let mut games = Vec::<Game>::new();
 
     for mut game_desc in input.lines().map(|s| s.split(":")) {
@@ -71,17 +66,30 @@ fn part_one(input: &str) -> Option<u32> {
         }
         games.push(game);
     }
+    games
+}
+
+fn part_one(input: &str) -> Option<u32> {
+    let test_game = Game {
+        most_cubes: HashMap::from([(Color::Red, 12), (Color::Green, 13), (Color::Blue, 14)]),
+        ..Game::default()
+    };
+
+    let games = parse_games(input);
 
     let valid_ids = games
-        .iter_mut()
+        .iter()
         .filter(|g| g.is_subset_of(&test_game))
         .map(|g| g.id);
 
     Some(valid_ids.sum())
 }
 
-fn part_two(_input: &str) -> Option<u32> {
-    None
+fn part_two(input: &str) -> Option<u32> {
+    let games = parse_games(input);
+    let powers = games.iter().map(|g| g.most_cubes.values().product::<u32>());
+
+    Some(powers.sum())
 }
 
 fn main() {
