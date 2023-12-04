@@ -21,7 +21,8 @@ fn part_two(_input: &str) -> Option<u32> {
 
 fn main() {
     let input = read_input();
-    let day = get_day_num();
+    let day = get_day_num(file!());
+    println!("{}", file!());
     println!("Day {day}.1 Solution: {:?}", part_one(&input));
     println!("Day {day}.2 Solution: {:?}", part_two(&input));
 }

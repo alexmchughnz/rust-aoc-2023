@@ -6,13 +6,9 @@ pub fn read_input() -> String {
     input
 }
 
-pub fn get_day_num() -> String {
-    let day_dir = env::current_dir().unwrap();
-    let day_str = day_dir.into_iter().last().unwrap().to_str().unwrap();
-    let day_num = day_str
-        .chars()
-        .skip_while(|c| !c.is_ascii_digit())
-        .take_while(|c| c.is_ascii_digit())
-        .collect::<String>();
-    day_num
+pub fn get_day_num(path: &str) -> String {
+    path.split('/')
+        .find(|seg| seg.parse::<u32>().is_ok())
+        .expect("a numeric path segment should exist")
+        .to_owned()
 }
