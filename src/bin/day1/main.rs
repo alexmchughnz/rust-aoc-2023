@@ -1,4 +1,4 @@
-use aoc2023::{get_day_num, read_input};
+use aoc2023::{get_day_str, read_input};
 
 struct Digit {
     value: u32,
@@ -107,8 +107,7 @@ fn part_two(input: &str) -> Option<u32> {
 
 fn main() {
     let input = read_input(file!(), "input");
-    let day = get_day_num(file!());
-    println!("{}", file!());
-    println!("Day {day}.1 Solution: {:?}", part_one(&input));
-    println!("Day {day}.2 Solution: {:?}", part_two(&input));
+    let day = get_day_str(file!());
+    println!("{day}-1 solution: {:?}", part_one(&input));
+    println!("{day}-2 solution: {:?}", part_two(&input));
 }

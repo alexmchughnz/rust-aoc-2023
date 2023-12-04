@@ -1,4 +1,4 @@
-use std::{env, fs};
+use std::fs;
 
 pub fn read_input(path: &str, filename: &str) -> String {
     let mut input_path = path.trim_end_matches(|c| c != '/').to_string();
@@ -7,9 +7,9 @@ pub fn read_input(path: &str, filename: &str) -> String {
     input
 }
 
-pub fn get_day_num(path: &str) -> String {
+pub fn get_day_str(path: &str) -> String {
     path.split('/')
-        .find(|seg| seg.parse::<u32>().is_ok())
-        .expect("a numeric path segment should exist")
+        .find(|seg| seg.contains("day"))
+        .expect("a /day[x]/ path segment should exist")
         .to_owned()
 }

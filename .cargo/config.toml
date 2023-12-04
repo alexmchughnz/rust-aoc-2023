@@ -1,2 +1,2 @@
 [alias]
-day = "run --quiet --bin"
+solve = "run --quiet --bin"
