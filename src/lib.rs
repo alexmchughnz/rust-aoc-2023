@@ -1,8 +1,9 @@
 use std::{env, fs};
 
-pub fn read_input() -> String {
-    let input_path = env::current_dir().unwrap().join("input");
-    let input = fs::read_to_string(input_path).expect("should read input file");
+pub fn read_input(path: &str, filename: &str) -> String {
+    let mut input_path = path.trim_end_matches(|c| c != '/').to_string();
+    input_path += filename;
+    let input = fs::read_to_string(input_path).expect("should read specified input file");
     input
 }
 

@@ -20,7 +20,7 @@ fn part_two(_input: &str) -> Option<u32> {
 }
 
 fn main() {
-    let input = read_input();
+    let input = read_input(file!(), "input");
     let day = get_day_num(file!());
     println!("{}", file!());
     println!("Day {day}.1 Solution: {:?}", part_one(&input));
