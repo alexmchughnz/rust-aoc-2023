@@ -1,5 +1,5 @@
 use aoc2023::{get_day_str, read_input};
-use std::{str::FromStr, time::Instant};
+use std::{collections::HashSet, str::FromStr, time::Instant};
 
 #[derive(Debug)]
 struct Card {
@@ -40,12 +40,25 @@ impl FromStr for Card {
 }
 
 fn part_one(input: &str) -> Option<u32> {
+    let mut scores = Vec::<u32>::new();
+
     for line in input.lines() {
         let card: Card = line.parse().unwrap();
-        dbg!(card);
+        let card_nums: HashSet<_> = card.card_nums.into_iter().collect();
+        let winning_nums: HashSet<_> = card.winning_nums.into_iter().collect();
+
+        let num_winners = card_nums.intersection(&winning_nums).count() as u32;
+        let score = {
+            if num_winners > 0 {
+                2u32.pow(num_winners - 1)
+            } else {
+                0
+            }
+        };
+        scores.push(score);
     }
 
-    None
+    Some(scores.into_iter().sum())
 }
 
 fn part_two(_input: &str) -> Option<u32> {
@@ -53,7 +66,7 @@ fn part_two(_input: &str) -> Option<u32> {
 }
 
 fn main() {
-    let input = read_input(file!(), "example1.txt");
+    let input = read_input(file!(), "input.txt");
     let day = get_day_str(file!());
 
     let time = Instant::now();
