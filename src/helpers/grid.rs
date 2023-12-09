@@ -1,5 +1,9 @@
-use std::{ops::Deref, str::FromStr};
+use std::{
+    ops::{Deref, Index},
+    str::FromStr,
+};
 
+#[derive(Clone, Copy)]
 pub struct GridIndex(pub usize, pub usize);
 
 impl<T> TryFrom<(T, T)> for GridIndex
@@ -15,12 +19,89 @@ where
     }
 }
 
+impl GridIndex {
+    /// Increment [`GridIndex`], wrapping to new lines.
+    /// Returns [`Err`] if [`GridIndex`] is already at end of [`Grid`].
+    pub fn increment<T>(&mut self, grid: &Grid<T>) -> Result<Self, ()> {
+        let mut i = self.0;
+        let mut j = self.1;
+        j += 1;
+        if j >= grid.width() {
+            j = 0;
+            i += 1;
+        }
+
+        let index = GridIndex(i, j);
+        if grid.in_bounds(&index) {
+            *self = index;
+            Ok(*self)
+        } else {
+            Err(())
+        }
+    }
+
+    pub fn move_up<T>(&mut self, _grid: &Grid<T>) -> Result<Self, ()> {
+        let i = &mut self.0;
+
+        if *i > 0 {
+            *i -= 1;
+            Ok(*self)
+        } else {
+            Err(())
+        }
+    }
+
+    pub fn move_down<T>(&mut self, grid: &Grid<T>) -> Result<Self, ()> {
+        let i = &mut self.0;
+
+        if *i < grid.height() - 1 {
+            *i += 1;
+            Ok(*self)
+        } else {
+            Err(())
+        }
+    }
+
+    pub fn move_left<T>(&mut self, _grid: &Grid<T>) -> Result<Self, ()> {
+        let j = &mut self.1;
+
+        if *j > 0 {
+            *j -= 1;
+            Ok(*self)
+        } else {
+            Err(())
+        }
+    }
+
+    pub fn move_right<T>(&mut self, grid: &Grid<T>) -> Result<Self, ()> {
+        let j = &mut self.1;
+
+        if *j < grid.width() - 1 {
+            *j += 1;
+            Ok(*self)
+        } else {
+            Err(())
+        }
+    }
+}
+
 pub struct Grid<T>(Vec<Vec<T>>);
 
 impl<T> Deref for Grid<T> {
+    // Workaround for using a 1-tuple of primitive type as a new type.
+    // Using `Grid` in a deref-able context will automatically unpack the tuple.
     type Target = Vec<Vec<T>>;
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+impl<T> Index<GridIndex> for Grid<T> {
+    type Output = T;
+
+    fn index(&self, index: GridIndex) -> &Self::Output {
+        let row = &self.deref()[index.0];
+        &row[index.1]
     }
 }
 
@@ -45,9 +126,9 @@ impl<T> Grid<T> {
 }
 
 impl<T> Grid<T> {
-    pub fn in_bounds(&self, coords: &(i64, i64)) -> bool {
-        let i_valid = (0 <= coords.0) && (coords.0 < self.height() as i64);
-        let j_valid = (0 <= coords.1) && (coords.1 < self.width() as i64);
+    pub fn in_bounds(&self, index: &GridIndex) -> bool {
+        let i_valid = index.0 < self.height();
+        let j_valid = index.1 < self.width();
         i_valid && j_valid
     }
 
@@ -67,5 +148,6 @@ impl<T> Grid<T> {
 
         all.into_iter()
             .filter_map(|coords| GridIndex::try_from(coords).ok())
+            .filter(|index| self.in_bounds(index))
     }
 }
