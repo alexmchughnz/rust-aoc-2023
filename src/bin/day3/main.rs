@@ -1,5 +1,7 @@
-use aoc2023::helpers::grid::{Grid, GridIndex};
 use aoc2023::{get_day_str, read_input};
+
+use aoc2023::helpers::grid::{Grid, GridDirection, GridIndex};
+use GridDirection::*;
 
 type Schematic = Grid<char>;
 
@@ -39,7 +41,7 @@ fn part_one(input: &str) -> Option<u32> {
                 is_part_number = true;
             }
 
-            if index.move_right(&schematic).is_err() {
+            if index.step(Right, &schematic).is_err() {
                 break;
             }
         }
