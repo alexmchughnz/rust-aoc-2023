@@ -9,8 +9,20 @@ fn part_two(_input: &str) -> Option<u32> {
 }
 
 fn main() {
-    let input = read_input(file!(), "input");
+    let input = read_input(file!(), "input.txt");
     let day = get_day_str(file!());
-    println!("{day}-1 solution: {:?}", part_one(&input));
-    println!("{day}-2 solution: {:?}", part_two(&input));
+
+    let time = Instant::now();
+    println!(
+        "{day}-1 solution: {:?} | {:.2?}",
+        part_one(&input),
+        time.elapsed()
+    );
+
+    let time = Instant::now();
+    println!(
+        "{day}-2 solution: {:?} | {:.2?}",
+        part_two(&input),
+        time.elapsed()
+    );
 }
