@@ -12,14 +12,20 @@ fn part_one(input: &str) -> Option<u32> {
     let mut part_numbers = Vec::<u32>::new();
 
     let mut index = GridIndex(0, 0);
-    loop {
+    'main: loop {
         let mut is_part_number = false;
 
         // Search for number.
-        while schematic.in_bounds(&index) && !schematic[index].is_numeric() {
-            match index.increment(&schematic) {
-                Ok(_) => (),
-                Err(_) => break, // reached end of grid
+        loop {
+            let res = index.increment(&schematic);
+
+            if res.is_err() {
+                // Reached end of grid.
+                break 'main;
+            }
+
+            if schematic[index].is_numeric() {
+                break;
             }
         }
 
@@ -41,11 +47,6 @@ fn part_one(input: &str) -> Option<u32> {
         // If a symbol was adjacent, collect this part number.
         if is_part_number {
             part_numbers.push(number.parse::<u32>().unwrap());
-        }
-
-        // Break once schematic is exhausted.
-        if index.increment(&schematic).is_err() {
-            break;
         }
     }
 
