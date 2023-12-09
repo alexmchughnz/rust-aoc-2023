@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use aoc2023::{get_day_str, read_input};
 
 use aoc2023::helpers::grid::{Grid, GridDirection, GridIndex};
@@ -37,11 +39,12 @@ fn part_one(input: &str) -> Option<u32> {
             number.push(schematic[index]);
 
             let surrounds = schematic.surrounding_indices(index);
-            if surrounds.map(|index| schematic[index]).any(is_symbol) {
+            if surrounds.map(|i| schematic[i]).any(is_symbol) {
                 is_part_number = true;
             }
 
-            if index.step(Right, &schematic).is_err() {
+            let res = index.step(Right, &schematic);
+            if res.is_err() {
                 break;
             }
         }
@@ -55,13 +58,94 @@ fn part_one(input: &str) -> Option<u32> {
     Some(part_numbers.into_iter().sum())
 }
 
-fn part_two(_input: &str) -> Option<u32> {
-    None
+fn part_two(input: &str) -> Option<u32> {
+    let schematic: Schematic = input.parse().unwrap();
+    let mut gear_ratios = Vec::<u32>::new();
+
+    let mut index = GridIndex(0, 0);
+    'main: loop {
+        // Search for gear symbol ('*').
+        loop {
+            let res = index.increment(&schematic);
+
+            if res.is_err() {
+                // Reached end of grid.
+                break 'main;
+            }
+
+            if schematic[index] == '*' {
+                break;
+            }
+        }
+
+        // Search surrounds for numbers.
+        let surrounds = schematic.surrounding_indices(index);
+        let indices_with_digits: Vec<_> =
+            surrounds.filter(|i| schematic[*i].is_numeric()).collect();
+        let indices_with_numbers: Vec<_> = indices_with_digits
+            .iter()
+            .filter(|i| {
+                // If an index's left neighbour is ALSO a gear-adjacent digit, they're part of the same number.
+                let left = i.get_neighbour(Left, &schematic);
+                left.is_none() || !indices_with_digits.contains(&left.unwrap())
+            })
+            .collect();
+
+        // If valid gear, count and parse surrounding numbers.
+        const NUMBERS_PER_GEAR: usize = 2;
+        if indices_with_numbers.len() != NUMBERS_PER_GEAR {
+            continue 'main;
+        }
+
+        let mut gear_ratio = 1;
+        for index in indices_with_numbers {
+            // Find start of number.
+            let mut leftmost = index.clone();
+            loop {
+                let left = leftmost.get_neighbour(Left, &schematic);
+                if left.is_some_and(|i| schematic[i].is_numeric()) {
+                    leftmost = left.unwrap();
+                } else {
+                    break;
+                }
+            }
+
+            // Scan number.
+            let mut number = String::new();
+            while schematic[leftmost].is_numeric() {
+                number.push(schematic[leftmost]);
+                let res = leftmost.step(Right, &schematic);
+
+                if res.is_err() {
+                    break;
+                }
+            }
+
+            // Factor number into gear ratio.
+            gear_ratio *= number.parse::<u32>().unwrap();
+        }
+
+        gear_ratios.push(gear_ratio)
+    }
+
+    Some(gear_ratios.into_iter().sum())
 }
 
 fn main() {
     let input = read_input(file!(), "input.txt");
     let day = get_day_str(file!());
-    println!("{day}-1 solution: {:?}", part_one(&input));
-    println!("{day}-2 solution: {:?}", part_two(&input));
+
+    let time = Instant::now();
+    println!(
+        "{day}-1 solution: {:?} | {:.2?}",
+        part_one(&input),
+        time.elapsed()
+    );
+
+    let time = Instant::now();
+    println!(
+        "{day}-2 solution: {:?} | {:.2?}",
+        part_two(&input),
+        time.elapsed()
+    );
 }
