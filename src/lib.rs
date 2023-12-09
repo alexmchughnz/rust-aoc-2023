@@ -1,12 +1,20 @@
 pub mod helpers;
 
-use std::fs;
+use std::{fs, path::Path};
 
 pub fn read_input(path: &str, filename: &str) -> String {
-    let mut input_path = path.trim_end_matches(|c| c != '/').to_string();
-    input_path += filename;
-    let input = fs::read_to_string(&input_path)
-        .expect(format!("should read specified input file ({})", &input_path).as_str());
+    let path = path.trim_end_matches(|c| c != '/'); // Removes trailing "main.rs"
+    let abs_input_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join(path)
+        .join(filename);
+
+    let input = fs::read_to_string(&abs_input_path).expect(
+        format!(
+            "should read specified input file ({})",
+            abs_input_path.display()
+        )
+        .as_str(),
+    );
     input
 }
 
