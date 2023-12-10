@@ -13,6 +13,9 @@ struct Card {
     winning_nums: Vec<u32>,
 }
 
+type CardCountMap = HashMap<usize, u32>;
+type CardPrizesMap = HashMap<usize, Option<Vec<usize>>>;
+
 impl FromStr for Card {
     type Err = ();
 
@@ -66,16 +69,40 @@ fn part_one(input: &str) -> Option<u32> {
     Some(scores.into_iter().sum())
 }
 
+fn count_prizes(id: usize, card_prizes_map: &CardPrizesMap) -> CardCountMap {
+    let mut prize_counts = CardCountMap::new();
+
+    // Count this card.
+    prize_counts
+        .entry(id)
+        .and_modify(|count| *count += 1)
+        .or_insert(1);
+
+    // Add each child's prizes to `prize_counts`.
+    let maybe_prize_ids = card_prizes_map.get(&id).unwrap();
+    if let Some(prize_ids) = maybe_prize_ids {
+        for &id in prize_ids {
+            let child_counts = count_prizes(id, card_prizes_map);
+            for (k, v) in child_counts {
+                prize_counts
+                    .entry(k)
+                    .and_modify(|count| *count += v)
+                    .or_insert(v);
+            }
+        }
+    }
+
+    prize_counts
+}
+
 fn part_two(input: &str) -> Option<u32> {
-    let mut card_counts = HashMap::<usize, u32>::new();
-    let mut card_prize_ids = HashMap::<usize, Option<RangeInclusive<usize>>>::new();
+    let mut card_totals_map = CardCountMap::new();
+    let mut card_prizes_map = CardPrizesMap::new();
 
     let all_cards: Vec<Card> = input.lines().map(|line| line.parse().unwrap()).collect();
-    for ref card in all_cards {
-        // Count card.
-        assert!(card_counts.get(&card.id).is_none());
-        card_counts.insert(card.id, 1);
 
+    // Find each card's prize IDs.
+    for card in all_cards.iter() {
         // Determine the card ids won by this card.
         let card_nums: HashSet<_> = card.card_nums.iter().collect();
         let winning_nums: HashSet<_> = card.winning_nums.iter().collect();
@@ -85,23 +112,34 @@ fn part_two(input: &str) -> Option<u32> {
             if num_winners == 0 {
                 None
             } else {
-                Some((card.id + 1)..=(card.id + num_winners))
+                let ids = (card.id + 1)..=(card.id + num_winners);
+                Some(ids.collect())
             }
         };
 
         // Add prize ids to map.
-        assert!(card_prize_ids.get(&card.id).is_none());
-        card_prize_ids.insert(card.id, prize_ids);
+        assert!(card_prizes_map.get(&card.id).is_none());
+        card_prizes_map.insert(card.id, prize_ids);
     }
 
-    dbg!(&card_counts);
-    dbg!(&card_prize_ids);
+    for card in all_cards {
+        // Recursively count card, and all its prizes.
+        let prize_counts = count_prizes(card.id, &card_prizes_map);
 
-    Some(card_counts.values().into_iter().sum())
+        // Update `card_totals_map` with this card's prizes.
+        for (k, v) in prize_counts {
+            card_totals_map
+                .entry(k)
+                .and_modify(|count| *count += v)
+                .or_insert(v);
+        }
+    }
+
+    Some(card_totals_map.values().into_iter().sum())
 }
 
 fn main() {
-    let input = read_input(file!(), "example1.txt");
+    let input = read_input(file!(), "input.txt");
     let day = get_day_str(file!());
 
     let time = Instant::now();
