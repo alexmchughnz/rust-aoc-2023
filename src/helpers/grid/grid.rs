@@ -72,5 +72,18 @@ impl<T> Grid<T> {
     }
 }
 
+impl<T: PartialEq> Grid<T> {
+    /// Returns the [`GridIndex`] of the first instance of 'target' in the [`Grid`].
+    pub fn find(&self, target: T) -> Option<GridIndex> {
+        let mut index = GridIndex(0, 0);
+
+        while self[index] != target {
+            index.increment(self).ok()?;
+        }
+
+        Some(index)
+    }
+}
+
 /** Private */
 impl<T> Grid<T> {}
