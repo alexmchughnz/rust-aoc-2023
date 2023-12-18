@@ -1,8 +1,9 @@
 use super::Grid;
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug, Default, Hash)]
 pub struct GridIndex(pub usize, pub usize);
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum GridDirection {
     Up,
     Down,
