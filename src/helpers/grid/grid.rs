@@ -1,6 +1,9 @@
-use super::GridIndex;
+use super::{GridDirection, GridIndex};
+
+use super::GRID_DIRECTIONS;
 
 use std::{
+    collections::HashMap,
     ops::{Deref, Index},
     str::FromStr,
 };
@@ -50,6 +53,16 @@ impl<T> Grid<T> {
         let i_valid = index.0 < self.height();
         let j_valid = index.1 < self.width();
         i_valid && j_valid
+    }
+
+    pub fn adjacent_indices(&self, index: GridIndex) -> HashMap<GridDirection, Option<GridIndex>> {
+        let mut adjacent = HashMap::<GridDirection, Option<GridIndex>>::new();
+        for dir in GRID_DIRECTIONS {
+            let neighbour = index.clone().step(dir, self).ok();
+            adjacent.insert(dir, neighbour);
+        }
+
+        adjacent
     }
 
     pub fn surrounding_indices(&self, index: GridIndex) -> impl Iterator<Item = GridIndex> + '_ {

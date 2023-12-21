@@ -12,6 +12,8 @@ pub enum GridDirection {
 }
 use GridDirection::*;
 
+pub const GRID_DIRECTIONS: [GridDirection; 4] = [Up, Down, Left, Right];
+
 /** Traits */
 impl<T> TryFrom<(T, T)> for GridIndex
 where
