@@ -1,14 +1,14 @@
 use aoc2023::helpers::grid::GridDirection;
 use aoc2023::helpers::grid::GridDirection::*;
 
-fn traverse_pipe(movement: GridDirection, symbol: char) -> Option<GridDirection> {
+pub fn traverse_pipe(dir: GridDirection, symbol: char) -> Option<GridDirection> {
     match symbol {
-        '|' => vertical_pipe(movement),
-        '-' => horizontal_pipe(movement),
-        'L' => north_east_bend(movement),
-        'J' => north_west_bend(movement),
-        '7' => south_west_bend(movement),
-        'F' => south_east_bend(movement),
+        '|' => vertical_pipe(dir),
+        '-' => horizontal_pipe(dir),
+        'L' => north_east_bend(dir),
+        'J' => north_west_bend(dir),
+        '7' => south_west_bend(dir),
+        'F' => south_east_bend(dir),
         _ => panic!("should not traverse a non-tile character"),
     }
 }
@@ -44,7 +44,7 @@ fn north_east_bend(dir: GridDirection) -> Option<GridDirection> {
 fn north_west_bend(dir: GridDirection) -> Option<GridDirection> {
     match dir {
         Down => Some(Left),
-        Left => Some(Up),
+        Right => Some(Up),
         _ => None,
     }
 }
