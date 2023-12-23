@@ -9,7 +9,7 @@ pub fn traverse_pipe(dir: GridDirection, symbol: char) -> Option<GridDirection> 
         'J' => north_west_bend(dir),
         '7' => south_west_bend(dir),
         'F' => south_east_bend(dir),
-        _ => panic!("should not traverse a non-tile character"),
+        _ => None,
     }
 }
 

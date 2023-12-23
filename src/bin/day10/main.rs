@@ -9,30 +9,26 @@ fn part_one(input: &str) -> Option<u32> {
 
     // Find the loop start and a valid direction to move in.
     let start_index = grid.find('S').unwrap();
-    let all_movements = grid
-        .adjacent_indices(start_index)
-        .into_iter()
-        .collect::<Vec<_>>();
-
-    let valid_movements = all_movements
-        .into_iter()
-        .filter(|(dir, index)| {
-            if index.is_none() {
-                return false;
-            }
-            let symbol = grid[index.unwrap()];
-            symbols::traverse_pipe(*dir, symbol).is_some()
-        })
-        .collect::<Vec<_>>();
-    let mut pipe_dir = valid_movements[0].0;
+    let mut valid_movements =
+        grid.adjacent_indices(start_index)
+            .into_iter()
+            .filter_map(|(dir, index)| {
+                let symbol = grid[index?];
+                if symbols::traverse_pipe(dir, symbol).is_some() {
+                    Some(dir)
+                } else {
+                    None
+                }
+            });
+    let mut dir = valid_movements.next().unwrap(); // Pick arbitrary valid direction.
 
     // Follow the pipes until the start index is reached again.
-    let mut current = start_index.clone().step(pipe_dir, &grid).unwrap();
+    let mut current = start_index.clone().step(dir, &grid).unwrap();
     let mut num_steps: u32 = 1;
     while current != start_index {
         let symbol = grid[current];
-        pipe_dir = symbols::traverse_pipe(pipe_dir, symbol).unwrap();
-        current = current.step(pipe_dir, &grid).unwrap();
+        dir = symbols::traverse_pipe(dir, symbol).unwrap();
+        current = current.step(dir, &grid).unwrap();
         num_steps += 1;
     }
 
