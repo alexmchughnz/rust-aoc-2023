@@ -55,7 +55,7 @@ impl GridIndex {
                 }
             }
             Right => {
-                if index.1 < grid.height() - 1 {
+                if index.1 < grid.width() - 1 {
                     index.1 += 1;
                     return Some(index);
                 }
