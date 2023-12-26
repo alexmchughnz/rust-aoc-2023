@@ -1,3 +1,5 @@
+use std::ops::Neg;
+
 use super::Grid;
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug, Default, Hash)]
@@ -15,6 +17,18 @@ use GridDirection::*;
 pub const GRID_DIRECTIONS: [GridDirection; 4] = [Up, Down, Left, Right];
 
 /** Traits */
+impl Neg for GridDirection {
+    type Output = Self;
+    fn neg(self) -> Self::Output {
+        match self {
+            Up => Down,
+            Down => Up,
+            Left => Right,
+            Right => Left,
+        }
+    }
+}
+
 impl<T> TryFrom<(T, T)> for GridIndex
 where
     T: TryInto<usize>,
