@@ -1,33 +1,10 @@
-use std::ops::Neg;
-
-use super::Grid;
+use super::{Grid, GridDirection};
+use GridDirection::*;
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug, Default, Hash)]
 pub struct GridIndex(pub usize, pub usize);
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum GridDirection {
-    Up,
-    Down,
-    Left,
-    Right,
-}
-use GridDirection::*;
-
-pub const GRID_DIRECTIONS: [GridDirection; 4] = [Up, Down, Left, Right];
-
 /** Traits */
-impl Neg for GridDirection {
-    type Output = Self;
-    fn neg(self) -> Self::Output {
-        match self {
-            Up => Down,
-            Down => Up,
-            Left => Right,
-            Right => Left,
-        }
-    }
-}
 
 impl<T> TryFrom<(T, T)> for GridIndex
 where
@@ -47,7 +24,7 @@ impl GridIndex {
     /// Returns the adjacent [`GridIndex`] in the specified [`GridDirection`].
     /// Return [`None`] if neighbour would be out-of-bounds of the [`Grid`].
     pub fn get_neighbour<T>(&self, dir: GridDirection, grid: &Grid<T>) -> Option<Self> {
-        let mut index = self.clone();
+        let mut index = *self;
 
         match dir {
             Up => {
@@ -81,18 +58,18 @@ impl GridIndex {
 
     /// Move [`GridIndex`] one step in a specified [`GridDirection`], if possible.
     /// Returns [`Err`] if step would be out-of-bounds of the [`Grid`].
-    pub fn step<T>(&mut self, dir: GridDirection, grid: &Grid<T>) -> Result<Self, ()> {
+    pub fn step<T>(&mut self, dir: GridDirection, grid: &Grid<T>) -> Result<Self, &'static str> {
         if let Some(dest) = self.get_neighbour(dir, grid) {
             *self = dest;
             Ok(*self)
         } else {
-            Err(())
+            Err("stepped out of bounds")
         }
     }
 
     /// Increment [`GridIndex`], wrapping to the next row if in the final column.
     /// Returns [`Err`] if [`GridIndex`] is already at end of [`Grid`].
-    pub fn increment<T>(&mut self, grid: &Grid<T>) -> Result<Self, ()> {
+    pub fn increment<T>(&mut self, grid: &Grid<T>) -> Result<Self, &'static str> {
         let mut i = self.0;
         let mut j = self.1;
         j += 1;
@@ -106,7 +83,7 @@ impl GridIndex {
             *self = index;
             Ok(*self)
         } else {
-            Err(())
+            Err("stepped over end of Grid")
         }
     }
 }
