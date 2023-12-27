@@ -4,7 +4,7 @@ use super::GRID_DIRECTIONS;
 
 use std::{
     collections::HashMap,
-    ops::{Deref, Index},
+    ops::{Deref, DerefMut, Index, IndexMut},
     str::FromStr,
 };
 
@@ -20,12 +20,27 @@ impl<T> Deref for Grid<T> {
     }
 }
 
+impl<T> DerefMut for Grid<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 impl<T> Index<GridIndex> for Grid<T> {
     type Output = T;
 
     fn index(&self, index: GridIndex) -> &Self::Output {
-        let row = &self.deref()[index.0];
+        let grid = self.deref();
+        let row = &grid[index.0];
         &row[index.1]
+    }
+}
+
+impl<T> IndexMut<GridIndex> for Grid<T> {
+    fn index_mut(&mut self, index: GridIndex) -> &mut Self::Output {
+        let grid = self.deref_mut();
+        let row = &mut grid[index.0];
+        &mut row[index.1]
     }
 }
 
