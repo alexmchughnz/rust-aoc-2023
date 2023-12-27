@@ -1,6 +1,33 @@
 use aoc2023::helpers::grid::GridDirection;
 use aoc2023::helpers::grid::GridDirection::*;
 
+pub fn dirs_to_pipe(dirs: impl Iterator<Item = GridDirection>) -> Option<char> {
+    let dirs: Vec<_> = dirs.collect();
+    if dirs.len() != 2 {
+        return None;
+    }
+
+    if dirs.contains(&Up) && dirs.contains(&Down) {
+        return Some('|');
+    }
+    if dirs.contains(&Left) && dirs.contains(&Right) {
+        return Some('-');
+    }
+    if dirs.contains(&Up) && dirs.contains(&Right) {
+        return Some('L');
+    }
+    if dirs.contains(&Up) && dirs.contains(&Left) {
+        return Some('J');
+    }
+    if dirs.contains(&Left) && dirs.contains(&Down) {
+        return Some('7');
+    }
+    if dirs.contains(&Right) && dirs.contains(&Down) {
+        return Some('F');
+    }
+    None
+}
+
 pub fn traverse_pipe(dir: GridDirection, symbol: char) -> Option<GridDirection> {
     match symbol {
         '|' => traverse_vertical_pipe(dir),

@@ -1,31 +1,10 @@
 use aoc2023::{get_day_str, read_input};
 use std::time::Instant;
 
-use std::ops::Not;
-
-use aoc2023::helpers::grid::Grid;
-use aoc2023::helpers::grid::GridDirection;
-use aoc2023::helpers::grid::GridIndex;
+use aoc2023::helpers::grid::{Grid, GridDirection, GridIndex};
 use GridDirection::*;
 
-mod symbols;
-
-#[derive(PartialEq, Eq, Debug)]
-enum Location {
-    Inside,
-    Outside,
-}
-use Location::*;
-
-impl Not for Location {
-    type Output = Self;
-    fn not(self) -> Self::Output {
-        match self {
-            Location::Inside => Location::Outside,
-            Location::Outside => Location::Inside,
-        }
-    }
-}
+mod pipes;
 
 fn part_one(input: &str) -> Option<u32> {
     let grid: Grid<char> = input.parse().unwrap();
@@ -37,7 +16,7 @@ fn part_one(input: &str) -> Option<u32> {
             .into_iter()
             .filter_map(|(dir, index)| {
                 let symbol = grid[index?];
-                if symbols::traverse_pipe(dir, symbol).is_some() {
+                if pipes::traverse_pipe(dir, symbol).is_some() {
                     Some(dir)
                 } else {
                     None
@@ -50,7 +29,7 @@ fn part_one(input: &str) -> Option<u32> {
     let mut num_steps: u32 = 1;
     while current != start_index {
         let symbol = grid[current];
-        dir = symbols::traverse_pipe(dir, symbol).unwrap();
+        dir = pipes::traverse_pipe(dir, symbol).unwrap();
         current = current.step(dir, &grid).unwrap();
         num_steps += 1;
     }
@@ -60,72 +39,88 @@ fn part_one(input: &str) -> Option<u32> {
 }
 
 fn part_two(input: &str) -> Option<u32> {
-    let grid: Grid<char> = input.parse().unwrap();
+    let mut grid: Grid<char> = input.parse().unwrap();
 
     // Find the loop start and a valid direction to move in.
     let start_index = grid.find('S').unwrap();
-    let mut valid_movements =
-        grid.adjacent_indices(start_index)
-            .into_iter()
-            .filter_map(|(dir, index)| {
-                let symbol = grid[index?];
-                if symbols::traverse_pipe(dir, symbol).is_some() {
-                    Some(dir)
-                } else {
-                    None
-                }
-            });
-    let mut dir = valid_movements.next().unwrap(); // Pick arbitrary valid direction.
+    let valid_movements: Vec<_> = grid
+        .adjacent_indices(start_index)
+        .into_iter()
+        .filter(|(dir, index)| index.is_some_and(|i| pipes::traverse_pipe(*dir, grid[i]).is_some()))
+        .map(|(dir, _)| dir)
+        .collect();
+
+    // Replace the start symbol with correct pipe char (for later traversal).
+    let start_symbol = pipes::dirs_to_pipe(valid_movements.iter().cloned()).unwrap();
+    grid[start_index] = start_symbol;
 
     // Follow the pipes until the start index is reached again.
     let mut visted_pipes = Vec::<GridIndex>::new();
     visted_pipes.push(start_index);
 
-    let mut current = start_index.clone().step(dir, &grid).unwrap();
-    while current != start_index {
-        visted_pipes.push(current);
-        let symbol = grid[current];
-        dir = symbols::traverse_pipe(dir, symbol).unwrap();
-        current = current.step(dir, &grid).unwrap();
+    let mut dir = valid_movements.into_iter().next().unwrap(); // Pick arbitrary valid direction to start.
+    let mut pipe_index = start_index.clone().step(dir, &grid).unwrap();
+    while pipe_index != start_index {
+        visted_pipes.push(pipe_index);
+        let symbol = grid[pipe_index];
+        dir = pipes::traverse_pipe(dir, symbol).unwrap();
+        pipe_index = pipe_index.step(dir, &grid).unwrap();
     }
 
-    // Count all indices "inside" the pipe structure.
-    let mut inside_indices = Vec::<GridIndex>::new();
-    for i in 0..grid.height() {
-        let mut location = Outside;
+    // Starting from the top left and moving Right, travel row-by-row until the pipe is hit.
+    let mut pipe_index = GridIndex(0, 0);
+    let mut pipe_dir = Right;
+    while !visted_pipes.contains(&pipe_index) {
+        pipe_index
+            .increment(&grid)
+            .expect("should find pipe before end of array");
+    }
+    assert!(grid[pipe_index] == 'F');
+    let entry_index = pipe_index;
 
-        for j in 0..grid.width() {
-            let index = GridIndex(i, j);
-            let is_pipe = visted_pipes.contains(&index);
-            let connects_right = symbols::traverse_pipe(Left, grid[index]).is_some();
-
-            println!("\nAt {index:?} = {:?}", grid[index]);
-            match location {
-                Outside => {
-                    if is_pipe {
-                        location = Inside;
-                        println!("Moving {location:?}");
-                    }
-                }
-                Inside => {
-                    if is_pipe && !connects_right {
-                        location = Outside;
-                        println!("Moving {location:?}");
-                    }
-                    if !is_pipe {
-                        inside_indices.push(index);
-                        println!("Adding index!");
-                    }
-                }
+    // Traverse the pipe system, recording each adjacent interior tile.
+    let mut interior_indices = Vec::<GridIndex>::new();
+    let mut inward_dir = Right;
+    loop {
+        // Check interior tile (both directions if rounding a corner).
+        let prev_inward_dir = inward_dir;
+        inward_dir = pipes::map_inward_dir(inward_dir, grid[pipe_index]).unwrap();
+        for dir in [prev_inward_dir, inward_dir] {
+            let inward_index = pipe_index.get_neighbour(dir, &grid).unwrap();
+            if !visted_pipes.contains(&inward_index) && !interior_indices.contains(&inward_index) {
+                interior_indices.push(inward_index);
             }
         }
+
+        // Get next index.
+        pipe_index = pipe_index.step(pipe_dir, &grid).unwrap();
+        if pipe_index == entry_index {
+            break;
+        }
+        pipe_dir = pipes::traverse_pipe(pipe_dir, grid[pipe_index]).unwrap();
     }
-    // dbg!(&inside_indices);
-    Some(inside_indices.len() as u32)
+
+    // Recursively locate any interior tiles adjacent to those already found.
+    let mut i: usize = 0;
+    loop {
+        let index = interior_indices[i];
+        for adjacent in grid.adjacent_indices(index).values().filter_map(|d| *d) {
+            if !visted_pipes.contains(&adjacent) && !interior_indices.contains(&adjacent) {
+                interior_indices.push(adjacent);
+            }
+        }
+
+        i += 1;
+        if i >= interior_indices.len() {
+            break;
+        }
+    }
+
+    Some(interior_indices.len() as u32)
 }
 
 fn main() {
-    let input = read_input(file!(), "example3.txt");
+    let input = read_input(file!(), "input.txt");
     let day = get_day_str(file!());
 
     let time = Instant::now();
