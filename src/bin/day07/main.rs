@@ -1,10 +1,11 @@
 use aoc2023::{get_day_str, read_input};
-use core::num;
-use std::{collections::HashSet, time::Instant};
 
-const BASE_TEN: usize = 10;
+use std::{cmp::Ordering, collections::HashSet, time::Instant};
 
-type Cards = [u32; 5];
+const BASE_TEN: u32 = 10;
+const CARDS_PER_HAND: usize = 5;
+
+type Cards = [u32; CARDS_PER_HAND];
 
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 enum HandType {
@@ -17,10 +18,36 @@ enum HandType {
     FiveOfAKind,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 struct Hand {
-    cards: [u32; 5],
+    cards: Cards,
     bid: u32,
 }
+
+impl PartialOrd for Hand {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Hand {
+    fn cmp(&self, other: &Self) -> Ordering {
+        let type_ordering = self.get_type().cmp(&other.get_type());
+        if type_ordering != Ordering::Equal {
+            return type_ordering;
+        }
+
+        for i in 0..CARDS_PER_HAND {
+            let card_ordering = self.cards[i].cmp(&other.cards[i]);
+            if card_ordering != Ordering::Equal {
+                return card_ordering;
+            }
+        }
+
+        Ordering::Equal
+    }
+}
+
 impl Hand {
     fn get_type(&self) -> HandType {
         let unique_cards = self.cards.into_iter().collect::<HashSet<_>>();
@@ -52,7 +79,7 @@ impl Hand {
 
 fn card_to_value(card: char) -> u32 {
     if card.is_numeric() {
-        return card.to_digit(10).unwrap();
+        card.to_digit(BASE_TEN).unwrap()
     } else {
         match card {
             'T' => 10,
@@ -66,7 +93,31 @@ fn card_to_value(card: char) -> u32 {
 }
 
 fn part_one(input: &str) -> Option<u32> {
-    None
+    let lines = input.lines();
+
+    // Collect all hands from input.
+    let mut hands = Vec::<Hand>::new();
+    for line in lines {
+        let mut parts = line.split_whitespace();
+        let hand_str = parts.next().unwrap();
+        let bid = parts.next().unwrap();
+
+        let hand = Hand {
+            cards: std::array::from_fn(|n| card_to_value(hand_str.chars().nth(n).unwrap())),
+            bid: bid.parse::<u32>().unwrap(),
+        };
+        hands.push(hand);
+    }
+
+    // Sort all hands by comparing (with `Ord`).
+    hands.sort();
+    let winnings = hands.into_iter().enumerate().map(|(i, hand)| {
+        let rank = (i + 1) as u32;
+
+        rank * hand.bid
+    });
+
+    Some(winnings.sum())
 }
 
 fn part_two(_input: &str) -> Option<u32> {
