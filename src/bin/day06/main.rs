@@ -1,4 +1,5 @@
 use aoc2023::{get_day_str, read_input};
+use core::num;
 use std::time::Instant;
 
 fn part_one(input: &str) -> Option<u32> {
@@ -39,8 +40,40 @@ fn part_one(input: &str) -> Option<u32> {
     Some(num_winning_combos.into_iter().product())
 }
 
-fn part_two(_input: &str) -> Option<u32> {
-    None
+fn part_two(input: &str) -> Option<u64> {
+    let mut lines = input.lines();
+    let time: u64 = lines
+        .next()
+        .unwrap()
+        .split_whitespace()
+        .skip(1)
+        .collect::<Vec<_>>()
+        .join("")
+        .parse::<u64>()
+        .unwrap();
+    let record: u64 = lines
+        .next()
+        .unwrap()
+        .split_whitespace()
+        .skip(1)
+        .collect::<Vec<_>>()
+        .join("")
+        .parse::<u64>()
+        .unwrap();
+
+    let mut num_wins = 0;
+
+    for hold_time in 1..time {
+        let travel_time = time - hold_time;
+        let speed = hold_time;
+
+        let distance = speed * travel_time;
+        if distance > record {
+            num_wins += 1;
+        }
+    }
+
+    Some(num_wins)
 }
 
 fn main() {
