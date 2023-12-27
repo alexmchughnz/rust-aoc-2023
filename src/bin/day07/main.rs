@@ -7,6 +7,24 @@ const CARDS_PER_HAND: usize = 5;
 
 type Cards = [u32; CARDS_PER_HAND];
 
+fn card_to_value(card: char, jokers_on: bool) -> u32 {
+    if card.is_numeric() {
+        card.to_digit(BASE_TEN).unwrap()
+    } else {
+        match card {
+            'T' => 10,
+            'J' => match jokers_on {
+                false => 11,
+                true => 0,
+            },
+            'Q' => 12,
+            'K' => 13,
+            'A' => 14,
+            _ => panic!(),
+        }
+    }
+}
+
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 enum HandType {
     HighCard,
@@ -22,6 +40,7 @@ enum HandType {
 struct Hand {
     cards: Cards,
     bid: u32,
+    jokers_on: bool, // Lazy implementation to switch settings between Parts 1 & 2.
 }
 
 impl PartialOrd for Hand {
@@ -32,7 +51,7 @@ impl PartialOrd for Hand {
 
 impl Ord for Hand {
     fn cmp(&self, other: &Self) -> Ordering {
-        let type_ordering = self.get_type().cmp(&other.get_type());
+        let type_ordering = self.determine_type().cmp(&other.determine_type());
         if type_ordering != Ordering::Equal {
             return type_ordering;
         }
@@ -49,17 +68,33 @@ impl Ord for Hand {
 }
 
 impl Hand {
-    fn get_type(&self) -> HandType {
-        let unique_cards = self.cards.into_iter().collect::<HashSet<_>>();
+    fn determine_type(&self) -> HandType {
+        // If enabled, jokers will match the highest frequency card for the purposes of card matching.
+        let num_jokers = if self.jokers_on {
+            self.cards
+                .iter()
+                .filter(|&&v| v == card_to_value('J', true))
+                .count()
+        } else {
+            0
+        };
+
+        let unique_cards = self
+            .cards
+            .into_iter()
+            .filter(|&c| c != 0) // excluding jokers
+            .collect::<HashSet<_>>();
         let num_unique = unique_cards.len();
-        let highest_freq = unique_cards
+
+        let highest_freq = unique_cards // excluding jokers
             .into_iter()
             .map(|u| self.cards.iter().filter(|&&c| c == u).count())
             .max()
-            .unwrap();
+            .unwrap_or(0)
+            + num_jokers;
 
         match num_unique {
-            1 => HandType::FiveOfAKind,
+            0 | 1 => HandType::FiveOfAKind, // 0 signifies all jokers
             2 => match highest_freq {
                 4 => HandType::FourOfAKind,
                 3 => HandType::FullHouse,
@@ -77,21 +112,6 @@ impl Hand {
     }
 }
 
-fn card_to_value(card: char) -> u32 {
-    if card.is_numeric() {
-        card.to_digit(BASE_TEN).unwrap()
-    } else {
-        match card {
-            'T' => 10,
-            'J' => 11,
-            'Q' => 12,
-            'K' => 13,
-            'A' => 14,
-            _ => panic!(),
-        }
-    }
-}
-
 fn part_one(input: &str) -> Option<u32> {
     let lines = input.lines();
 
@@ -103,8 +123,9 @@ fn part_one(input: &str) -> Option<u32> {
         let bid = parts.next().unwrap();
 
         let hand = Hand {
-            cards: std::array::from_fn(|n| card_to_value(hand_str.chars().nth(n).unwrap())),
+            cards: std::array::from_fn(|n| card_to_value(hand_str.chars().nth(n).unwrap(), false)),
             bid: bid.parse::<u32>().unwrap(),
+            jokers_on: false,
         };
         hands.push(hand);
     }
@@ -113,15 +134,38 @@ fn part_one(input: &str) -> Option<u32> {
     hands.sort();
     let winnings = hands.into_iter().enumerate().map(|(i, hand)| {
         let rank = (i + 1) as u32;
-
         rank * hand.bid
     });
 
     Some(winnings.sum())
 }
 
-fn part_two(_input: &str) -> Option<u32> {
-    None
+fn part_two(input: &str) -> Option<u32> {
+    let lines = input.lines();
+
+    // Collect all hands from input.
+    let mut hands = Vec::<Hand>::new();
+    for line in lines {
+        let mut parts = line.split_whitespace();
+        let hand_str = parts.next().unwrap();
+        let bid = parts.next().unwrap();
+
+        let hand = Hand {
+            cards: std::array::from_fn(|n| card_to_value(hand_str.chars().nth(n).unwrap(), true)),
+            bid: bid.parse::<u32>().unwrap(),
+            jokers_on: true,
+        };
+        hands.push(hand);
+    }
+
+    // Sort all hands by comparing (with `Ord`).
+    hands.sort();
+    let winnings = hands.into_iter().enumerate().map(|(i, hand)| {
+        let rank = (i + 1) as u32;
+        rank * hand.bid
+    });
+
+    Some(winnings.sum())
 }
 
 fn main() {
