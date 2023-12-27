@@ -21,7 +21,7 @@ fn part_one(input: &str) -> Option<u64> {
             break;
         }
 
-        let maps: Vec<Vec<u64>> = lines
+        let maps: Vec<_> = lines
             .by_ref()
             .take_while(|line| !line.is_empty())
             .map(|line| {
@@ -32,12 +32,13 @@ fn part_one(input: &str) -> Option<u64> {
             })
             .collect();
 
-        let mapper_fn = move |n| {
+        let mapper_fn = move |n: u64| {
             for map in maps.clone() {
-                let [dest_start, src_start, count] = map[..=2].try_into().unwrap();
+                let [dest_start, src_start, count] = map[..].try_into().unwrap();
 
                 if src_start <= n && n < src_start + count {
-                    return n + (dest_start - src_start);
+                    let result = n as i64 + (dest_start as i64 - src_start as i64);
+                    return result as u64;
                 }
             }
             return n;
