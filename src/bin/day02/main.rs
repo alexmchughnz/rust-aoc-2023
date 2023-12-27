@@ -37,7 +37,7 @@ impl Game {
 fn parse_games(input: &str) -> Vec<Game> {
     let mut games = Vec::<Game>::new();
 
-    for mut game_desc in input.lines().map(|s| s.split(":")) {
+    for mut game_desc in input.lines().map(|s| s.split(':')) {
         // Init `game` struct with id.
         let id = game_desc
             .next()

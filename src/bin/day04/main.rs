@@ -1,7 +1,6 @@
 use aoc2023::{get_day_str, read_input};
 use std::{
     collections::{HashMap, HashSet},
-    ops::RangeInclusive,
     str::FromStr,
     time::Instant,
 };
@@ -135,7 +134,7 @@ fn part_two(input: &str) -> Option<u32> {
         }
     }
 
-    Some(card_totals_map.values().into_iter().sum())
+    Some(card_totals_map.values().sum())
 }
 
 fn main() {

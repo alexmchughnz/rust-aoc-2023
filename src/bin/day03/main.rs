@@ -100,7 +100,7 @@ fn part_two(input: &str) -> Option<u32> {
         let mut gear_ratio = 1;
         for index in indices_with_numbers {
             // Find start of number.
-            let mut leftmost = index.clone();
+            let mut leftmost = *index;
             loop {
                 let left = leftmost.get_neighbour(Left, &schematic);
                 if left.is_some_and(|i| schematic[i].is_numeric()) {
