@@ -1,5 +1,4 @@
 use aoc2023::{get_day_str, read_input};
-use core::num;
 use std::time::Instant;
 
 fn part_one(input: &str) -> Option<u32> {
