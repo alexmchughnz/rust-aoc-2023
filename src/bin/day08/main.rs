@@ -1,4 +1,5 @@
 use aoc2023::{get_day_str, read_input};
+use num::Integer;
 use std::{collections::HashMap, time::Instant};
 
 fn part_one(input: &str) -> Option<u32> {
@@ -40,10 +41,15 @@ fn part_one(input: &str) -> Option<u32> {
 
     Some(num_steps)
 }
+#[derive(Clone, Copy, Default)]
+struct Cycle {
+    first_hit: usize,
+    prev_hit: usize,
+    period: usize,
+}
 
 fn part_two(input: &str) -> Option<u64> {
     let mut lines = input.lines();
-
     let mut instructions = lines.next().unwrap().chars().cycle();
     lines.next(); // blank line
 
@@ -64,29 +70,45 @@ fn part_two(input: &str) -> Option<u64> {
     }
 
     // Traverse network until all starts reach a node ending in 'Z'.
-    let time = Instant::now();
-    let mut num_steps: u64 = 0;
+    let mut num_steps = 0;
 
     let starts = network.keys().filter(|s| s.ends_with('A'));
     let mut currents = starts.collect::<Vec<_>>();
-    while !currents.iter().all(|s| s.ends_with('Z')) {
+    let mut cycles = vec![Cycle::default(); currents.len()];
+    while cycles.iter().any(|cyc| cyc.period == 0) {
         num_steps += 1;
-        if num_steps % 1_000_000 == 0 {
-            println!("Step {num_steps} @ {:?}", time.elapsed());
-        }
-
         let instruction = instructions.next();
-        for current in currents.iter_mut() {
+
+        for (i, current) in currents.iter_mut().enumerate() {
             let paths = network.get(*current).unwrap();
             *current = match instruction {
                 Some('L') => &paths.0,
                 Some('R') => &paths.1,
                 _ => unreachable!(),
             };
+
+            if current.ends_with('Z') {
+                let cycle = &mut cycles[i];
+                if cycle.first_hit == 0 {
+                    cycle.first_hit = num_steps;
+                } else {
+                    cycle.period = num_steps - cycle.prev_hit;
+                }
+                cycle.prev_hit = num_steps;
+
+                println!(
+                    "Start {} hit 'Z'. First hit = {}. Delta = {}",
+                    i, cycle.first_hit, cycle.period
+                );
+            }
         }
     }
 
-    Some(num_steps)
+    let steps_to_finish = cycles
+        .into_iter()
+        .map(|cyc| cyc.period)
+        .fold(1, |multiple, ref x| multiple.lcm(x));
+    Some(steps_to_finish as u64)
 }
 
 fn main() {
