@@ -4,42 +4,28 @@ use super::GRID_DIRECTIONS;
 
 use std::{
     collections::HashMap,
-    ops::{Deref, DerefMut, Index, IndexMut},
+    ops::{Index, IndexMut},
     str::FromStr,
 };
 
 pub struct Grid<T>(Vec<Vec<T>>);
 
 /** Traits */
-impl<T> Deref for Grid<T> {
-    // Workaround for using a 1-tuple of primitive type as a new type.
-    // Using `Grid` in a deref-able context will automatically unpack the tuple.
-    type Target = Vec<Vec<T>>;
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl<T> DerefMut for Grid<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
 
 impl<T> Index<GridIndex> for Grid<T> {
     type Output = T;
 
     fn index(&self, index: GridIndex) -> &Self::Output {
-        let grid = self.deref();
-        let row = &grid[index.0];
+        let Grid(rows) = self;
+        let row = &rows[index.0];
         &row[index.1]
     }
 }
 
 impl<T> IndexMut<GridIndex> for Grid<T> {
     fn index_mut(&mut self, index: GridIndex) -> &mut Self::Output {
-        let grid = self.deref_mut();
-        let row = &mut grid[index.0];
+        let Grid(rows) = self;
+        let row = &mut rows[index.0];
         &mut row[index.1]
     }
 }
@@ -57,11 +43,13 @@ impl FromStr for Grid<char> {
 /** Public */
 impl<T> Grid<T> {
     pub fn width(&self) -> usize {
-        self.first().unwrap().len()
+        let Grid(rows) = self;
+        rows.first().unwrap().len()
     }
 
     pub fn height(&self) -> usize {
-        self.len()
+        let Grid(rows) = self;
+        rows.len()
     }
 
     pub fn in_bounds(&self, index: &GridIndex) -> bool {
