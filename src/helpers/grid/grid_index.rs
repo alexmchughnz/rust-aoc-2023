@@ -58,10 +58,14 @@ impl GridIndex {
 
     /// Move [`GridIndex`] one step in a specified [`GridDirection`], if possible.
     /// Returns [`Err`] if step would be out-of-bounds of the [`Grid`].
-    pub fn step<T>(&mut self, dir: GridDirection, grid: &Grid<T>) -> Result<Self, &'static str> {
+    pub fn step<T>(
+        &mut self,
+        dir: GridDirection,
+        grid: &Grid<T>,
+    ) -> Result<&mut Self, &'static str> {
         if let Some(dest) = self.get_neighbour(dir, grid) {
             *self = dest;
-            Ok(*self)
+            Ok(self)
         } else {
             Err("stepped out of bounds")
         }

@@ -25,12 +25,12 @@ fn part_one(input: &str) -> Option<u32> {
     let mut dir = valid_movements.next().unwrap(); // Pick arbitrary valid direction.
 
     // Follow the pipes until the start index is reached again.
-    let mut current = start_index.clone().step(dir, &grid).unwrap();
+    let mut current = *start_index.clone().step(dir, &grid).unwrap();
     let mut num_steps: u32 = 1;
     while current != start_index {
         let symbol = grid[current];
         dir = pipes::traverse_pipe(dir, symbol).unwrap();
-        current = current.step(dir, &grid).unwrap();
+        current = *current.step(dir, &grid).unwrap();
         num_steps += 1;
     }
 
@@ -59,12 +59,12 @@ fn part_two(input: &str) -> Option<u32> {
     visted_pipes.push(start_index);
 
     let mut dir = valid_movements.into_iter().next().unwrap(); // Pick arbitrary valid direction to start.
-    let mut pipe_index = start_index.clone().step(dir, &grid).unwrap();
+    let mut pipe_index = *start_index.clone().step(dir, &grid).unwrap();
     while pipe_index != start_index {
         visted_pipes.push(pipe_index);
         let symbol = grid[pipe_index];
         dir = pipes::traverse_pipe(dir, symbol).unwrap();
-        pipe_index = pipe_index.step(dir, &grid).unwrap();
+        pipe_index.step(dir, &grid).unwrap();
     }
 
     // Starting from the top left and moving Right, travel row-by-row until the pipe is hit.
@@ -93,7 +93,7 @@ fn part_two(input: &str) -> Option<u32> {
         }
 
         // Get next index.
-        pipe_index = pipe_index.step(pipe_dir, &grid).unwrap();
+        pipe_index.step(pipe_dir, &grid).unwrap();
         if pipe_index == entry_index {
             break;
         }
