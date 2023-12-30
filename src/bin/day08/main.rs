@@ -10,7 +10,7 @@ fn part_one(input: &str) -> Option<u32> {
 
     // Populate the network.
     let mut network = HashMap::<String, (String, String)>::new();
-    while let Some(line) = lines.next() {
+    for line in lines {
         let [node, left, right] = line
             .chars()
             .filter(|c| c.is_alphanumeric() || c.is_whitespace())
@@ -55,7 +55,7 @@ fn part_two(input: &str) -> Option<u64> {
 
     // Populate the network.
     let mut network = HashMap::<String, (String, String)>::new();
-    while let Some(line) = lines.next() {
+    for line in lines {
         let [node, left, right] = line
             .chars()
             .filter(|c| c.is_alphanumeric() || c.is_whitespace())

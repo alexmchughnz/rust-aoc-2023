@@ -48,7 +48,7 @@ fn part_two(input: &str) -> Option<u32> {
 
         // Generate sequences of diffs.
         let mut all_diffs = Vec::<Vec<_>>::new();
-        all_diffs.push(nums.into());
+        all_diffs.push(nums);
         while !all_diffs.last().unwrap().iter().all(|&d| d == 0) {
             let next_diffs = all_diffs.last().unwrap().windows(2).map(|w| w[1] - w[0]);
             all_diffs.push(next_diffs.collect());
