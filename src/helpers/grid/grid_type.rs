@@ -1,4 +1,5 @@
 use super::{GridDirection, GridIndex};
+use GridDirection::*;
 
 use super::GRID_DIRECTIONS;
 
@@ -61,7 +62,7 @@ impl<T> Grid<T> {
     pub fn adjacent_indices(&self, index: GridIndex) -> HashMap<GridDirection, Option<GridIndex>> {
         let mut adjacent = HashMap::<GridDirection, Option<GridIndex>>::new();
         for dir in GRID_DIRECTIONS {
-            let neighbour = index.clone().step(dir, self).ok();
+            let neighbour = index.get_neighbour(dir, self);
             adjacent.insert(dir, neighbour);
         }
 
@@ -69,22 +70,26 @@ impl<T> Grid<T> {
     }
 
     pub fn surrounding_indices(&self, index: GridIndex) -> impl Iterator<Item = GridIndex> + '_ {
-        let i = index.0 as i64;
-        let j = index.1 as i64;
-        let all = [
-            (i - 1, j - 1),
-            (i - 1, j),
-            (i - 1, j + 1),
-            (i, j - 1),
-            (i, j + 1),
-            (i + 1, j - 1),
-            (i + 1, j),
-            (i + 1, j + 1),
+        let all_steps = [
+            [Some(Up), Some(Left)],
+            [Some(Up), None],
+            [Some(Up), Some(Right)],
+            [Some(Left), None],
+            [Some(Right), None],
+            [Some(Down), Some(Left)],
+            [Some(Down), None],
+            [Some(Down), Some(Right)],
         ];
 
-        all.into_iter()
-            .filter_map(|coords| GridIndex::try_from(coords).ok())
-            .filter(|index| self.in_bounds(index))
+        let indices = all_steps.into_iter().filter_map(move |steps| {
+            let mut neighbour = index;
+            for dir in steps.into_iter().flatten() {
+                neighbour = neighbour.get_neighbour(dir, self)?;
+            }
+            Some(neighbour)
+        });
+
+        indices
     }
 }
 

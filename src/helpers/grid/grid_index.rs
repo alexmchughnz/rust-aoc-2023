@@ -5,17 +5,12 @@ use GridDirection::*;
 pub struct GridIndex(pub usize, pub usize);
 
 /** Traits */
-
-impl<T> TryFrom<(T, T)> for GridIndex
+impl<T> From<(T, T)> for GridIndex
 where
-    T: TryInto<usize>,
+    T: Into<usize>,
 {
-    type Error = T::Error;
-
-    fn try_from(value: (T, T)) -> Result<Self, Self::Error> {
-        let i: usize = value.0.try_into()?;
-        let j: usize = value.1.try_into()?;
-        Ok(GridIndex(i, j))
+    fn from(value: (T, T)) -> Self {
+        GridIndex(value.0.into(), value.1.into())
     }
 }
 
@@ -73,7 +68,7 @@ impl GridIndex {
 
     /// Increment [`GridIndex`], wrapping to the next row if in the final column.
     /// Returns [`Err`] if [`GridIndex`] is already at end of [`Grid`].
-    pub fn increment<T>(&mut self, grid: &Grid<T>) -> Result<Self, &'static str> {
+    pub fn increment<T>(&mut self, grid: &Grid<T>) -> Result<&mut Self, &'static str> {
         let mut i = self.0;
         let mut j = self.1;
         j += 1;
@@ -85,7 +80,7 @@ impl GridIndex {
         let index = GridIndex(i, j);
         if grid.in_bounds(&index) {
             *self = index;
-            Ok(*self)
+            Ok(self)
         } else {
             Err("stepped over end of Grid")
         }
