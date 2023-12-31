@@ -1,33 +1,43 @@
-use super::{GridDirection, GridIndex};
-use GridDirection::*;
-
-use super::GRID_DIRECTIONS;
+use super::GridIndex;
 
 use std::{
-    collections::HashMap,
     ops::{Index, IndexMut},
     str::FromStr,
 };
 
+#[derive(Clone)]
 pub struct Grid<T>(Vec<Vec<T>>);
 
 /** Traits */
-
-impl<T> Index<GridIndex> for Grid<T> {
+impl<T> Index<(usize, usize)> for Grid<T> {
     type Output = T;
 
-    fn index(&self, index: GridIndex) -> &Self::Output {
+    fn index(&self, indices: (usize, usize)) -> &Self::Output {
         let Grid(rows) = self;
-        let row = &rows[index.0];
-        &row[index.1]
+        let row = &rows[indices.0];
+        &row[indices.1]
     }
 }
 
-impl<T> IndexMut<GridIndex> for Grid<T> {
-    fn index_mut(&mut self, index: GridIndex) -> &mut Self::Output {
+impl<T> Index<GridIndex<'_, T>> for Grid<T> {
+    type Output = T;
+
+    fn index(&self, grid_index: GridIndex<T>) -> &Self::Output {
+        self.index(grid_index.indices)
+    }
+}
+
+impl<T> IndexMut<(usize, usize)> for Grid<T> {
+    fn index_mut(&mut self, indices: (usize, usize)) -> &mut Self::Output {
         let Grid(rows) = self;
-        let row = &mut rows[index.0];
-        &mut row[index.1]
+        let row = &mut rows[indices.0];
+        &mut row[indices.1]
+    }
+}
+
+impl<T> IndexMut<GridIndex<'_, T>> for Grid<T> {
+    fn index_mut(&mut self, grid_index: GridIndex<T>) -> &mut Self::Output {
+        self.index_mut(grid_index.indices)
     }
 }
 
@@ -43,63 +53,24 @@ impl FromStr for Grid<char> {
 
 /** Public */
 impl<T> Grid<T> {
-    pub fn width(&self) -> usize {
-        let Grid(rows) = self;
-        rows.first().unwrap().len()
-    }
-
-    pub fn height(&self) -> usize {
-        let Grid(rows) = self;
-        rows.len()
-    }
-
-    pub fn in_bounds(&self, index: &GridIndex) -> bool {
-        let i_valid = index.0 < self.height();
-        let j_valid = index.1 < self.width();
-        i_valid && j_valid
-    }
-
-    pub fn adjacent_indices(&self, index: GridIndex) -> HashMap<GridDirection, Option<GridIndex>> {
-        let mut adjacent = HashMap::<GridDirection, Option<GridIndex>>::new();
-        for dir in GRID_DIRECTIONS {
-            let neighbour = index.get_neighbour(dir, self);
-            adjacent.insert(dir, neighbour);
+    pub fn make_index(&self, i: usize, j: usize) -> GridIndex<T> {
+        GridIndex {
+            grid: self,
+            indices: (i, j),
         }
-
-        adjacent
-    }
-
-    pub fn surrounding_indices(&self, index: GridIndex) -> impl Iterator<Item = GridIndex> + '_ {
-        let all_steps = [
-            [Some(Up), Some(Left)],
-            [Some(Up), None],
-            [Some(Up), Some(Right)],
-            [Some(Left), None],
-            [Some(Right), None],
-            [Some(Down), Some(Left)],
-            [Some(Down), None],
-            [Some(Down), Some(Right)],
-        ];
-
-        let indices = all_steps.into_iter().filter_map(move |steps| {
-            let mut neighbour = index;
-            for dir in steps.into_iter().flatten() {
-                neighbour = neighbour.get_neighbour(dir, self)?;
-            }
-            Some(neighbour)
-        });
-
-        indices
     }
 }
 
 impl<T: PartialEq> Grid<T> {
     /// Returns the [`GridIndex`] of the first instance of 'target' in the [`Grid`].
-    pub fn find(&self, target: T) -> Option<GridIndex> {
-        let mut index = GridIndex(0, 0);
+    pub fn find(&self, target: T) -> Option<GridIndex<T>> {
+        let mut index = GridIndex {
+            indices: (0, 0),
+            grid: self,
+        };
 
         while self[index] != target {
-            index.increment(self).ok()?;
+            index.increment().ok()?;
         }
 
         Some(index)
@@ -107,4 +78,14 @@ impl<T: PartialEq> Grid<T> {
 }
 
 /** Private */
-impl<T> Grid<T> {}
+impl<T> Grid<T> {
+    pub(super) fn width(&self) -> usize {
+        let Grid(rows) = self;
+        rows.first().unwrap().len()
+    }
+
+    pub(super) fn height(&self) -> usize {
+        let Grid(rows) = self;
+        rows.len()
+    }
+}

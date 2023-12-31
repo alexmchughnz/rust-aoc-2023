@@ -1,49 +1,58 @@
+use std::collections::HashMap;
+
 use super::{Grid, GridDirection};
 use GridDirection::*;
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug, Default, Hash)]
-pub struct GridIndex(pub usize, pub usize);
+pub struct GridIndex<'a, T> {
+    pub(super) grid: &'a Grid<T>,
+    pub(super) indices: (usize, usize),
+}
 
 /** Traits */
-impl<T> From<(T, T)> for GridIndex
-where
-    T: Into<usize>,
-{
-    fn from(value: (T, T)) -> Self {
-        GridIndex(value.0.into(), value.1.into())
+impl<T> Copy for GridIndex<'_, T> {}
+
+impl<T> Clone for GridIndex<'_, T> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl<T> PartialEq for GridIndex<'_, T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.indices.eq(&other.indices)
     }
 }
 
 /** Public */
-impl GridIndex {
+impl<T> GridIndex<'_, T> {
     /// Returns the adjacent [`GridIndex`] in the specified [`GridDirection`].
     /// Return [`None`] if neighbour would be out-of-bounds of the [`Grid`].
-    pub fn get_neighbour<T>(&self, dir: GridDirection, grid: &Grid<T>) -> Option<Self> {
-        let mut index = *self;
+    pub fn neighbour(&self, dir: GridDirection) -> Option<Self> {
+        let mut dest = *self;
 
         match dir {
             Up => {
-                if index.0 > 0 {
-                    index.0 -= 1;
-                    return Some(index);
+                if dest.indices.0 > 0 {
+                    dest.indices.0 -= 1;
+                    return Some(dest);
                 }
             }
             Down => {
-                if index.0 < grid.height() - 1 {
-                    index.0 += 1;
-                    return Some(index);
+                if dest.indices.0 < self.grid.height() - 1 {
+                    dest.indices.0 += 1;
+                    return Some(dest);
                 }
             }
             Left => {
-                if index.1 > 0 {
-                    index.1 -= 1;
-                    return Some(index);
+                if dest.indices.1 > 0 {
+                    dest.indices.1 -= 1;
+                    return Some(dest);
                 }
             }
             Right => {
-                if index.1 < grid.width() - 1 {
-                    index.1 += 1;
-                    return Some(index);
+                if dest.indices.1 < self.grid.width() - 1 {
+                    dest.indices.1 += 1;
+                    return Some(dest);
                 }
             }
         }
@@ -51,14 +60,40 @@ impl GridIndex {
         None
     }
 
+    pub fn all_neighbours(&self) -> HashMap<GridDirection, Option<GridIndex<T>>> {
+        let mut adjacent = HashMap::new();
+        for dir in super::GRID_DIRECTIONS {
+            let neighbour = self.neighbour(dir);
+            adjacent.insert(dir, neighbour);
+        }
+
+        adjacent
+    }
+
+    pub fn surrounding(&self) -> impl Iterator<Item = GridIndex<T>> {
+        let all_steps = [
+            [Some(Up), Some(Left)],
+            [Some(Up), None],
+            [Some(Up), Some(Right)],
+            [Some(Left), None],
+            [Some(Right), None],
+            [Some(Down), Some(Left)],
+            [Some(Down), None],
+            [Some(Down), Some(Right)],
+        ];
+
+        all_steps.into_iter().filter_map(|steps| {
+            let mut neighbour = *self;
+            for dir in steps.into_iter().flatten() {
+                neighbour = neighbour.neighbour(dir)?;
+            }
+            Some(neighbour)
+        })
+    }
     /// Move [`GridIndex`] one step in a specified [`GridDirection`], if possible.
     /// Returns [`Err`] if step would be out-of-bounds of the [`Grid`].
-    pub fn step<T>(
-        &mut self,
-        dir: GridDirection,
-        grid: &Grid<T>,
-    ) -> Result<&mut Self, &'static str> {
-        if let Some(dest) = self.get_neighbour(dir, grid) {
+    pub fn step(&mut self, dir: GridDirection) -> Result<&mut Self, &'static str> {
+        if let Some(dest) = self.neighbour(dir) {
             *self = dest;
             Ok(self)
         } else {
@@ -68,24 +103,18 @@ impl GridIndex {
 
     /// Increment [`GridIndex`], wrapping to the next row if in the final column.
     /// Returns [`Err`] if [`GridIndex`] is already at end of [`Grid`].
-    pub fn increment<T>(&mut self, grid: &Grid<T>) -> Result<&mut Self, &'static str> {
-        let mut i = self.0;
-        let mut j = self.1;
-        j += 1;
-        if j >= grid.width() {
-            j = 0;
-            i += 1;
+    pub fn increment(&mut self) -> Result<&mut Self, &'static str> {
+        match self.step(Right) {
+            Ok(_) => (),
+            Err(_) => {
+                self.indices.1 = 0; // Return to start of row.
+                self.step(Down)?;
+            }
         }
 
-        let index = GridIndex(i, j);
-        if grid.in_bounds(&index) {
-            *self = index;
-            Ok(self)
-        } else {
-            Err("stepped over end of Grid")
-        }
+        Ok(self)
     }
 }
 
 /** Private */
-impl GridIndex {}
+impl<T> GridIndex<'_, T> {}

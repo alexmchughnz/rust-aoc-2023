@@ -2,7 +2,7 @@ use std::time::Instant;
 
 use aoc2023::{get_day_str, read_input};
 
-use aoc2023::helpers::grid::{Grid, GridDirection, GridIndex};
+use aoc2023::helpers::grid::{Grid, GridDirection};
 use GridDirection::*;
 
 type Schematic = Grid<char>;
@@ -15,13 +15,13 @@ fn part_one(input: &str) -> Option<u32> {
     let schematic: Schematic = input.parse().unwrap();
     let mut part_numbers = Vec::<u32>::new();
 
-    let mut index = GridIndex(0, 0);
+    let mut index = schematic.make_index(0, 0);
     'main: loop {
         let mut is_part_number = false;
 
         // Search for number.
         loop {
-            let res = index.increment(&schematic);
+            let res = index.increment();
 
             if res.is_err() {
                 // Reached end of grid.
@@ -38,12 +38,12 @@ fn part_one(input: &str) -> Option<u32> {
         while schematic[index].is_numeric() {
             number.push(schematic[index]);
 
-            let surrounds = schematic.surrounding_indices(index);
+            let surrounds = index.surrounding();
             if surrounds.map(|i| schematic[i]).any(is_symbol) {
                 is_part_number = true;
             }
 
-            let res = index.step(Right, &schematic);
+            let res = index.step(Right);
             if res.is_err() {
                 break;
             }
@@ -62,11 +62,11 @@ fn part_two(input: &str) -> Option<u32> {
     let schematic: Schematic = input.parse().unwrap();
     let mut gear_ratios = Vec::<u32>::new();
 
-    let mut index = GridIndex(0, 0);
+    let mut index = schematic.make_index(0, 0);
     'main: loop {
         // Search for gear symbol ('*').
         loop {
-            let res = index.increment(&schematic);
+            let res = index.increment();
 
             if res.is_err() {
                 // Reached end of grid.
@@ -79,14 +79,14 @@ fn part_two(input: &str) -> Option<u32> {
         }
 
         // Search surrounds for numbers.
-        let surrounds = schematic.surrounding_indices(index);
+        let surrounds = index.surrounding();
         let indices_with_digits: Vec<_> =
             surrounds.filter(|i| schematic[*i].is_numeric()).collect();
         let indices_with_numbers: Vec<_> = indices_with_digits
             .iter()
             .filter(|i| {
                 // If an index's left neighbour is ALSO a gear-adjacent digit, they're part of the same number.
-                let left = i.get_neighbour(Left, &schematic);
+                let left = i.neighbour(Left);
                 left.is_none() || !indices_with_digits.contains(&left.unwrap())
             })
             .collect();
@@ -102,7 +102,7 @@ fn part_two(input: &str) -> Option<u32> {
             // Find start of number.
             let mut leftmost = *index;
             loop {
-                let left = leftmost.get_neighbour(Left, &schematic);
+                let left = leftmost.neighbour(Left);
                 if left.is_some_and(|i| schematic[i].is_numeric()) {
                     leftmost = left.unwrap();
                 } else {
@@ -114,7 +114,7 @@ fn part_two(input: &str) -> Option<u32> {
             let mut number = String::new();
             while schematic[leftmost].is_numeric() {
                 number.push(schematic[leftmost]);
-                let res = leftmost.step(Right, &schematic);
+                let res = leftmost.step(Right);
 
                 if res.is_err() {
                     break;
