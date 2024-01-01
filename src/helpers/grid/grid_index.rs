@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Debug};
 
 use super::{Grid, GridDirection};
 use GridDirection::*;
@@ -20,6 +20,12 @@ impl<T> Clone for GridIndex<'_, T> {
 impl<T> PartialEq for GridIndex<'_, T> {
     fn eq(&self, other: &Self) -> bool {
         self.indices.eq(&other.indices)
+    }
+}
+
+impl<T> Debug for GridIndex<'_, T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("({}, {})", self.indices.0, self.indices.1))
     }
 }
 

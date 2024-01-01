@@ -1,6 +1,8 @@
 use super::GridIndex;
 
 use std::{
+    fmt::Debug,
+    iter::once,
     ops::{Index, IndexMut},
     str::FromStr,
 };
@@ -48,6 +50,19 @@ impl FromStr for Grid<char> {
         let chars_iter = s.lines().map(|line| line.chars().collect());
         let lines_iter = chars_iter.collect();
         Ok(Grid(lines_iter))
+    }
+}
+
+impl Debug for Grid<char> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let Grid(rows) = self;
+        let grid_str = rows
+            .into_iter()
+            .flat_map(|row| row.into_iter().chain(once(&'\n')))
+            .collect::<String>();
+
+        f.write_str("\n")?;
+        f.write_str(&grid_str)
     }
 }
 
