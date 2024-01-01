@@ -5,7 +5,7 @@ use GridDirection::*;
 
 pub struct GridIndex<'a, T> {
     pub(super) grid: &'a Grid<T>,
-    pub(super) indices: (usize, usize),
+    pub indices: (usize, usize),
 }
 
 /** Traits */

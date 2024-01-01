@@ -108,12 +108,12 @@ impl<T: PartialEq> Grid<T> {
 
 /** Private */
 impl<T> Grid<T> {
-    pub(super) fn width(&self) -> usize {
+    pub fn width(&self) -> usize {
         let Grid(rows) = self;
         rows.first().unwrap().len()
     }
 
-    pub(super) fn height(&self) -> usize {
+    pub fn height(&self) -> usize {
         let Grid(rows) = self;
         rows.len()
     }
