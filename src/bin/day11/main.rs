@@ -1,12 +1,13 @@
 use aoc2023::{get_day_str, read_input};
-use std::time::Instant;
+use std::{
+    cmp::{max, min},
+    time::Instant,
+};
 
 use aoc2023::helpers::grid::Grid;
 
 fn part_one(input: &str) -> Option<u32> {
     let image: Grid<char> = input.parse().unwrap();
-    dbg!(&image);
-
     // Find all galaxies.
     let mut galaxies = Vec::new();
     for (index, c) in image.iter() {
@@ -40,23 +41,20 @@ fn part_one(input: &str) -> Option<u32> {
         let (start, rest) = galaxies.split_at(n);
         let a = start.last().unwrap().indices;
         for b in rest.into_iter().map(|index| index.indices) {
-            let mut row_indices = [a.0, b.0];
-            row_indices.sort();
-
-            let mut column_indices = [a.1, b.1];
-            column_indices.sort();
+            let rows_between = min(a.0, b.0)..max(a.0, b.0);
+            let columns_between = min(a.1, b.1)..max(a.1, b.1);
 
             let num_doubled_rows = doubled_rows
                 .iter()
-                .filter(|&&i| row_indices[0] < i && i < row_indices[1])
+                .filter(|&i| rows_between.contains(i))
                 .count();
-            let num_doubled_columns = doubled_columns
+            let num_expanded_columns = doubled_columns
                 .iter()
-                .filter(|&&j| column_indices[0] < j && j < column_indices[1])
+                .filter(|&j| columns_between.contains(j))
                 .count();
 
-            let i_distance = row_indices[1] - row_indices[0] + num_doubled_rows;
-            let j_distance = column_indices[1] - column_indices[0] + num_doubled_columns;
+            let i_distance = rows_between.len() + num_doubled_rows;
+            let j_distance = columns_between.len() + num_expanded_columns;
             distances.push(i_distance + j_distance);
         }
     }
@@ -64,10 +62,9 @@ fn part_one(input: &str) -> Option<u32> {
     Some(distances.into_iter().sum::<usize>() as u32)
 }
 
-const EXPANSION_SIZE: usize = 999_999;
+const EXPANSION_SIZE: usize = 1_000_000;
 fn part_two(input: &str) -> Option<u64> {
     let image: Grid<char> = input.parse().unwrap();
-    dbg!(&image);
 
     // Find all galaxies.
     let mut galaxies = Vec::new();
@@ -102,24 +99,20 @@ fn part_two(input: &str) -> Option<u64> {
         let (start, rest) = galaxies.split_at(n);
         let a = start.last().unwrap().indices;
         for b in rest.into_iter().map(|index| index.indices) {
-            let mut row_indices = [a.0, b.0];
-            row_indices.sort();
-
-            let mut column_indices = [a.1, b.1];
-            column_indices.sort();
+            let rows_between = min(a.0, b.0)..max(a.0, b.0);
+            let columns_between = min(a.1, b.1)..max(a.1, b.1);
 
             let num_expanded_rows = expanded_rows
                 .iter()
-                .filter(|&&i| row_indices[0] < i && i < row_indices[1])
+                .filter(|&i| rows_between.contains(i))
                 .count();
             let num_expanded_columns = expanded_columns
                 .iter()
-                .filter(|&&j| column_indices[0] < j && j < column_indices[1])
+                .filter(|&j| columns_between.contains(j))
                 .count();
 
-            let i_distance = row_indices[1] - row_indices[0] + num_expanded_rows * EXPANSION_SIZE;
-            let j_distance =
-                column_indices[1] - column_indices[0] + num_expanded_columns * EXPANSION_SIZE;
+            let i_distance = rows_between.len() + num_expanded_rows * (EXPANSION_SIZE - 1);
+            let j_distance = columns_between.len() + num_expanded_columns * (EXPANSION_SIZE - 1);
             distances.push(i_distance + j_distance);
         }
     }
