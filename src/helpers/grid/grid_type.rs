@@ -53,6 +53,20 @@ impl FromStr for Grid<char> {
 
 /** Public */
 impl<T> Grid<T> {
+    pub fn iter(&self) -> impl Iterator<Item = (GridIndex<T>, &T)> + '_ {
+        let Grid(rows) = self;
+        rows.iter().flatten().enumerate().map(|(i, item)| {
+            let mut index = GridIndex {
+                indices: (0, 0),
+                grid: self,
+            };
+            for _ in 0..i {
+                index.increment().ok();
+            }
+            (index, item)
+        })
+    }
+
     pub fn make_index(&self, i: usize, j: usize) -> GridIndex<T> {
         GridIndex {
             grid: self,
